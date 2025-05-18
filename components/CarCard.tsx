@@ -1,21 +1,29 @@
 "use client";
 import { useState, useEffect } from "react";
-import type { Car } from "@/types";
+import type { Car, Client } from "@/types";
+import { getRandomCarImage, getRandomDefaultImage } from "@/utils/carImages";
 import { getImageFromCache, saveImageToCache } from "@/utils/imageCache";
 
 interface CarCardProps {
   car: Car;
   onBidClick: () => void;
+  client: Client | null;
+  refreshData: () => void;
 }
 
-export default function CarCard({ car, onBidClick }: CarCardProps) {
+export default function CarCard({
+  car,
+  onBidClick,
+  client,
+  refreshData,
+}: CarCardProps) {
   const [carImage, setCarImage] = useState<string | null>(null);
   const [isLoadingImage, setIsLoadingImage] = useState(true);
   const [imageError, setImageError] = useState(false);
 
-  // Buscar la imagen del auto cuando el componente se monta
+  // Obtener la imagen del auto cuando el componente se monta
   useEffect(() => {
-    const fetchCarImage = async () => {
+    const getCarImage = () => {
       try {
         setIsLoadingImage(true);
         setImageError(false);
@@ -29,88 +37,26 @@ export default function CarCard({ car, onBidClick }: CarCardProps) {
           return;
         }
 
-        // Si no está en caché, intentar obtener una imagen de la API principal
-        try {
-          const response = await fetch(
-            `/api/proxy/car-image?marca=${encodeURIComponent(
-              car.marca
-            )}&modelo=${encodeURIComponent(car.modelo)}&año=${car.año}`,
-            { cache: "no-store" } // Evitar caché para obtener resultados frescos
-          );
+        // Si no está en caché, obtener una imagen aleatoria según la marca
+        const imageUrl = getRandomCarImage(car.marca);
 
-          if (response.ok) {
-            const data = await response.json();
-
-            if (data.imageUrl) {
-              console.log(
-                "Imagen encontrada para",
-                car.marca,
-                car.modelo,
-                ":",
-                data.imageUrl
-              );
-              setCarImage(data.imageUrl);
-              // Guardar en caché
-              saveImageToCache(car._id, data.imageUrl);
-              setIsLoadingImage(false);
-              return; // Importante: salir de la función si encontramos una imagen
-            }
-          } else {
-            console.error(
-              `Error en la respuesta de la API: ${response.status}`
-            );
-          }
-        } catch (error) {
-          console.error("Error al buscar imagen principal:", error);
-          // No hacemos throw aquí, simplemente continuamos con el fallback
-        }
-
-        // Solo llegamos aquí si no se encontró una imagen o hubo un error
-        console.log("No se encontró imagen, usando respaldo para", car.marca);
-
-        try {
-          const fallbackResponse = await fetch(
-            `/api/proxy/car-image-fallback?marca=${encodeURIComponent(
-              car.marca
-            )}`
-          );
-
-          if (fallbackResponse.ok) {
-            const fallbackData = await fallbackResponse.json();
-
-            if (fallbackData.imageUrl) {
-              console.log(
-                "Usando imagen de respaldo para",
-                car.marca,
-                ":",
-                fallbackData.imageUrl
-              );
-              setCarImage(fallbackData.imageUrl);
-              // Guardar en caché
-              saveImageToCache(car._id, fallbackData.imageUrl);
-            } else {
-              setImageError(true);
-            }
-          } else {
-            console.error(
-              `Error en la respuesta de fallback: ${fallbackResponse.status}`
-            );
-            setImageError(true);
-          }
-        } catch (fallbackError) {
-          console.error("Error al obtener imagen de respaldo:", fallbackError);
-          setImageError(true);
-        }
+        // Guardar en caché y establecer la imagen
+        saveImageToCache(car._id, imageUrl);
+        setCarImage(imageUrl);
       } catch (error) {
-        console.error("Error general al obtener imagen:", error);
+        console.error("Error al obtener imagen:", error);
         setImageError(true);
+
+        // En caso de error, usar una imagen genérica
+        const defaultImage = getRandomDefaultImage();
+        setCarImage(defaultImage);
       } finally {
         setIsLoadingImage(false);
       }
     };
 
-    fetchCarImage();
-  }, [car._id, car.marca, car.modelo, car.año]);
+    getCarImage();
+  }, [car._id, car.marca, car.modelo]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -121,17 +67,23 @@ export default function CarCard({ car, onBidClick }: CarCardProps) {
             <p className="text-sm text-gray-500 mt-2">Cargando imagen...</p>
           </div>
         ) : carImage && !imageError ? (
-          <img
-            src={carImage || "/placeholder.svg"}
-            alt={`${car.marca} ${car.modelo}`}
-            className="object-cover h-full w-full"
-            onError={() => {
-              console.error("Error al cargar la imagen:", carImage);
-              setImageError(true);
-            }}
-          />
+          <div className="w-full h-full">
+            <img
+              src={carImage || "/placeholder.svg"}
+              alt={`${car.marca} ${car.modelo}`}
+              className="object-cover h-full w-full"
+              onError={() => {
+                console.log(
+                  "Error al cargar la imagen, usando imagen de respaldo"
+                );
+                setImageError(true);
+                // En caso de error, usar una imagen genérica
+                setCarImage(getRandomDefaultImage());
+              }}
+            />
+          </div>
         ) : (
-          <div className="flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center justify-center w-full h-full">
             <img
               src={`/placeholder.svg?height=200&width=300&text=${car.marca}+${car.modelo}`}
               alt={`${car.marca} ${car.modelo}`}
