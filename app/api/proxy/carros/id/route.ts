@@ -4,22 +4,20 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  console.log("🔧 Entrando en DELETE /api/proxy/carros/[id]");
-
   try {
     const id = params.id;
-    console.log("📌 ID recibido en params:", id);
+    console.log("Proxy: Eliminando carro con ID:", id);
 
     if (!id) {
-      console.error("❌ ID del carro no proporcionado");
       return NextResponse.json(
         { error: "ID del carro es requerido" },
         { status: 400 }
       );
     }
 
+    // Usar la URL directa a la API
     const url = `https://car-auction-api.onrender.com/api/carros/${id}`;
-    console.log("🌐 Enviando solicitud DELETE a:", url);
+    console.log("Enviando solicitud DELETE a:", url);
 
     const response = await fetch(url, {
       method: "DELETE",
@@ -28,24 +26,19 @@ export async function DELETE(
       },
     });
 
-    console.log("📡 Respuesta recibida con status:", response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("🧨 Error en respuesta de API:", errorText);
-      return NextResponse.json(
-        { error: `Error al eliminar el carro: ${response.status}` },
-        { status: response.status }
-      );
+      console.error("API error response:", errorText);
+      throw new Error(`Error HTTP: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("✅ Carro eliminado exitosamente:", data);
+    console.log("Proxy: Carro eliminado exitosamente", data);
     return NextResponse.json(data);
-  } catch (error: any) {
-    console.error("🔥 Excepción en proxy DELETE:", error.message || error);
+  } catch (error) {
+    console.error("Proxy error eliminando carro:", error);
     return NextResponse.json(
-      { error: "Error inesperado al eliminar el carro" },
+      { error: "Error al eliminar el carro" },
       { status: 500 }
     );
   }
