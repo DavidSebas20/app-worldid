@@ -6,6 +6,7 @@ import BottomNavigation from "@/components/BottomNavigation";
 import MyBids from "@/components/MyBids";
 import Profile from "@/components/Profile";
 import AddCar from "@/components/AddCar";
+import Header from "@/components/Header";
 import type { Car, Client } from "@/types";
 import { generateRandomWallet } from "@/utils/wallet";
 import { clearImageCache } from "@/utils/imageCache";
@@ -22,6 +23,22 @@ export default function Dashboard() {
   const [error, setError] = useState("");
   const [userWallet, setUserWallet] = useState<string | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+
+  // Obtener el título según la pestaña activa
+  const getTitle = () => {
+    switch (activeTab) {
+      case "cars":
+        return "Autos Disponibles";
+      case "mybids":
+        return "Mis Pujas";
+      case "addcar":
+        return "Añadir Auto";
+      case "profile":
+        return "Mi Perfil";
+      default:
+        return "Subasta de Autos";
+    }
+  };
 
   // Generar o recuperar una wallet para el usuario
   useEffect(() => {
@@ -139,6 +156,8 @@ export default function Dashboard() {
 
   return (
     <main className="flex min-h-screen flex-col">
+      <Header title={getTitle()} />
+
       {error && (
         <div
           className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative m-4"
