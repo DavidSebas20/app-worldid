@@ -49,6 +49,8 @@ export default function CarList({
               key={car._id}
               car={car}
               onBidClick={() => handleBidClick(car)}
+              client={client}
+              refreshData={refreshData}
             />
           ))}
         </div>
