@@ -8,6 +8,7 @@ import Profile from "@/components/Profile";
 import AddCar from "@/components/AddCar";
 import type { Car, Client } from "@/types";
 import { generateRandomWallet } from "@/utils/wallet";
+import { clearImageCache } from "@/utils/imageCache";
 
 export default function Dashboard() {
   const { data: session, status } = useSession({
@@ -20,6 +21,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [userWallet, setUserWallet] = useState<string | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
   // Generar o recuperar una wallet para el usuario
   useEffect(() => {
@@ -40,7 +42,19 @@ export default function Dashboard() {
   }, [session, status]);
 
   // Actualizar la función fetchCars para usar nuestro proxy
-  const fetchCars = async () => {
+  const fetchCars = async (force = false) => {
+    // Si no es forzado y ha pasado menos de 5 minutos desde la última carga, no recargar
+    const now = Date.now();
+    if (!force && lastFetchTime > 0 && now - lastFetchTime < 5 * 60 * 1000) {
+      console.log(
+        "Usando datos en caché, última carga hace",
+        Math.round((now - lastFetchTime) / 1000),
+        "segundos"
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
@@ -51,6 +65,7 @@ export default function Dashboard() {
         headers: {
           "Content-Type": "application/json",
         },
+        cache: "no-store",
       });
 
       if (!response.ok) {
@@ -60,6 +75,7 @@ export default function Dashboard() {
       const data = await response.json();
       console.log("Cars fetched:", data.length);
       setCars(data);
+      setLastFetchTime(now);
     } catch (error) {
       console.error("Error fetching cars:", error);
       setError("Error al cargar los autos. Por favor, intente de nuevo.");
@@ -90,8 +106,12 @@ export default function Dashboard() {
     }
   };
 
-  const refreshData = () => {
-    fetchCars();
+  const refreshData = (forceRefresh = false) => {
+    // Si se fuerza el refresco, limpiar el caché de imágenes
+    if (forceRefresh) {
+      clearImageCache();
+    }
+    fetchCars(forceRefresh);
     if (client?._id) {
       fetchMyBids(client._id);
     }
@@ -157,7 +177,7 @@ export default function Dashboard() {
           />
         )}
         {activeTab === "addcar" && (
-          <AddCar client={client} refreshData={refreshData} />
+          <AddCar client={client} refreshData={() => refreshData(true)} />
         )}
       </div>
       <BottomNavigation

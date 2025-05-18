@@ -75,6 +75,8 @@ export default function AddCar({ client, refreshData }: AddCarProps) {
         año: new Date().getFullYear(),
         precioInicial: 1000,
       });
+
+      // Forzar actualización completa para incluir el nuevo auto
       refreshData();
     } catch (error) {
       console.error("Error al añadir auto:", error);
