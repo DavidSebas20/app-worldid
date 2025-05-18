@@ -1,26 +1,26 @@
-import type { MiniAppPaymentSuccessPayload } from "@worldcoin/minikit-js"
-import { cookies } from "next/headers"
-import { type NextRequest, NextResponse } from "next/server"
+import type { MiniAppPaymentSuccessPayload } from "@worldcoin/minikit-js";
+import { cookies } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 
 interface IRequestPayload {
-  payload: MiniAppPaymentSuccessPayload
+  payload: MiniAppPaymentSuccessPayload;
 }
 
 export async function POST(req: NextRequest) {
-  const { payload } = (await req.json()) as IRequestPayload
+  const { payload } = (await req.json()) as IRequestPayload;
 
   // IMPORTANT: Here we should fetch the reference you created in /initiate-payment to ensure the transaction we are verifying is the same one we initiated
   //   const reference = getReferenceFromDB();
-  const cookieStore = cookies()
+  const cookieStore = await cookies();
 
-  const reference = cookieStore.get("payment-nonce")?.value
+  const reference = cookieStore.get("payment-nonce")?.value;
 
-  console.log(reference)
+  console.log(reference);
 
   if (!reference) {
-    return NextResponse.json({ success: false })
+    return NextResponse.json({ success: false });
   }
-  console.log(payload)
+  console.log(payload);
   // 1. Check that the transaction we received from the mini app is the same one we sent
   if (payload.reference === reference) {
     const response = await fetch(
@@ -30,15 +30,15 @@ export async function POST(req: NextRequest) {
         headers: {
           Authorization: `Bearer ${process.env.DEV_PORTAL_API_KEY}`,
         },
-      },
-    )
-    const transaction = await response.json()
+      }
+    );
+    const transaction = await response.json();
     // 2. Here we optimistically confirm the transaction.
     // Otherwise, you can poll until the status == mined
     if (transaction.reference == reference && transaction.status != "failed") {
-      return NextResponse.json({ success: true })
+      return NextResponse.json({ success: true });
     } else {
-      return NextResponse.json({ success: false })
+      return NextResponse.json({ success: false });
     }
   }
 }
