@@ -10,6 +10,7 @@ interface PurchaseModalProps {
   isOpen: boolean;
   onClose: () => void;
   refreshData: () => void;
+  bid?: any; // Añadimos la puja como prop opcional
 }
 
 export default function PurchaseModal({
@@ -18,6 +19,7 @@ export default function PurchaseModal({
   isOpen,
   onClose,
   refreshData,
+  bid,
 }: PurchaseModalProps) {
   const [simulatePurchase, setSimulatePurchase] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -101,23 +103,57 @@ export default function PurchaseModal({
       setProcessingFeedback(true);
       setError("");
 
+      // 1. Primero, eliminar el carro directamente desde la API externa
       console.log("Eliminando carro con ID:", car._id);
 
-      // Eliminar el carro de la lista
-      const response = await fetch(`/api/proxy/carros/${car._id}`, {
-        method: "DELETE",
-      });
+      const carResponse = await fetch(
+        `https://car-auction-api.onrender.com/api/carros/${car._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      console.log("Respuesta de eliminación:", response.status);
+      console.log("Respuesta de eliminación del carro:", carResponse.status);
 
-      if (!response.ok) {
-        const errorText = await response.text();
+      if (!carResponse.ok) {
+        const errorText = await carResponse.text();
         console.error("Error al eliminar el auto:", errorText);
-        throw new Error(`Error al eliminar el auto: ${response.status}`);
+        throw new Error(`Error al eliminar el auto: ${carResponse.status}`);
       }
 
-      const data = await response.json();
-      console.log("Respuesta de eliminación:", data);
+      const carData = await carResponse.json();
+      console.log("Carro eliminado exitosamente:", carData);
+
+      // 2. Luego, eliminar la puja si existe
+      if (bid && bid._id) {
+        console.log("Eliminando puja con ID:", bid._id);
+
+        try {
+          const pujaResponse = await fetch(
+            `https://car-auction-api.onrender.com/api/pujas/${bid._id}`,
+            {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!pujaResponse.ok) {
+            console.warn(`No se pudo eliminar la puja: ${pujaResponse.status}`);
+            // Continuamos con el proceso aunque falle la eliminación de la puja
+          } else {
+            const pujaData = await pujaResponse.json();
+            console.log("Puja eliminada exitosamente:", pujaData);
+          }
+        } catch (pujaError) {
+          console.warn("Error al eliminar la puja:", pujaError);
+          // Continuamos con el proceso aunque falle la eliminación de la puja
+        }
+      }
 
       setFeedbackComplete(true);
       setFeedbackMessage(

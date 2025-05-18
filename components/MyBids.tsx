@@ -243,6 +243,7 @@ export default function MyBids({ bids, refreshData }: MyBidsProps) {
             setSelectedBid(null);
           }}
           refreshData={refreshData}
+          bid={selectedBid} // Pasamos la puja completa al modal
         />
       )}
     </div>
