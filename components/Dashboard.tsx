@@ -6,6 +6,7 @@ import BottomNavigation from "@/components/BottomNavigation";
 import MyBids from "@/components/MyBids";
 import Profile from "@/components/Profile";
 import AddCar from "@/components/AddCar";
+import Chatbot from "@/components/Chatbot";
 import Header from "@/components/Header";
 import type { Car, Client } from "@/types";
 import { generateRandomWallet } from "@/utils/wallet";
@@ -33,6 +34,8 @@ export default function Dashboard() {
         return "Mis Pujas";
       case "addcar":
         return "Añadir Auto";
+      case "chatbot":
+        return "Ruedin - Asistente";
       case "profile":
         return "Mi Perfil";
       default:
@@ -197,6 +200,11 @@ export default function Dashboard() {
         )}
         {activeTab === "addcar" && (
           <AddCar client={client} refreshData={() => refreshData(true)} />
+        )}
+        {activeTab === "chatbot" && (
+          <div className="h-[calc(100vh-140px)]">
+            <Chatbot client={client} />
+          </div>
         )}
       </div>
       <BottomNavigation
