@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     // Crear un mensaje de sistema con el contexto
     const systemMessage = {
       role: "system",
-      content: `Eres Ruedin, un asistente especializado en subastas y ventas de autos. 
+      content: `Eres Bidy, un asistente especializado en subastas y ventas de autos. 
       
       Información del cliente: ${
         context.client

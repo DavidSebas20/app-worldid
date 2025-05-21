@@ -153,7 +153,7 @@ export default function ChatInterface({ client }: ChatInterfaceProps) {
       <div className="p-3 bg-blue-600 dark:bg-blue-700 text-white flex items-center gap-2">
         <Bot className="w-5 h-5" />
         <h2 className="text-base font-semibold">
-          Ruedin - Asistente de Subastas
+          Bidy - Asistente de Subastas
         </h2>
       </div>
 
