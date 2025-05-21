@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
       clienteId: body.clienteId,
       carroId: body.carroId,
       monto: body.monto,
+      paymentMethod: body.paymentMethod || "worldcoin", // Añadir método de pago con valor por defecto
     };
 
     const response = await fetch(

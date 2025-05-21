@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { MiniKit, tokenToDecimals, Tokens } from "@worldcoin/minikit-js";
 import PurchaseModal from "./PurchaseModal";
+import { Wallet, DollarSign } from "lucide-react";
 
 interface MyBidsProps {
   bids: any[];
@@ -181,6 +182,21 @@ export default function MyBids({ bids, refreshData }: MyBidsProps) {
                       <span className="font-medium">
                         ${highestBid.monto.toLocaleString()}
                       </span>
+                      {highestBid.paymentMethod && (
+                        <span className="ml-2 inline-flex items-center text-xs">
+                          {highestBid.paymentMethod === "worldcoin" ? (
+                            <>
+                              <Wallet className="h-3 w-3 text-blue-500 mr-1" />
+                              <span className="text-blue-500">Worldcoin</span>
+                            </>
+                          ) : (
+                            <>
+                              <DollarSign className="h-3 w-3 text-green-500 mr-1" />
+                              <span className="text-green-500">Dólares</span>
+                            </>
+                          )}
+                        </span>
+                      )}
                     </p>
                     <p>
                       Puja Más Alta Actual:{" "}

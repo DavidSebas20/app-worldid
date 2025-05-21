@@ -7,6 +7,9 @@ import {
   Tokens,
 } from "@worldcoin/minikit-js";
 import type { Car, Client } from "@/types";
+import { Wallet, DollarSign } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface BidModalProps {
   car: Car;
@@ -30,6 +33,9 @@ export default function BidModal({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [skipVerification, setSkipVerification] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"worldcoin" | "dollars">(
+    "worldcoin"
+  );
 
   if (!isOpen) return null;
 
@@ -100,8 +106,8 @@ export default function BidModal({
       // Ahora procesamos el pago antes de hacer la puja
       setIsPaying(true);
 
-      // Si estamos saltando la verificación, también saltamos el pago
-      if (!skipVerification) {
+      // Si estamos saltando la verificación o usando dólares, también saltamos el pago con Worldcoin
+      if (!skipVerification && paymentMethod === "worldcoin") {
         // Iniciar pago
         const paymentInitResponse = await fetch(`/api/initiate-payment`, {
           method: "POST",
@@ -155,6 +161,7 @@ export default function BidModal({
         clienteId: client._id,
         carroId: car._id,
         monto: bidAmount,
+        paymentMethod: paymentMethod, // Añadimos el método de pago a los datos de la puja
       };
 
       console.log("Enviando puja con datos:", bidData);
@@ -223,6 +230,39 @@ export default function BidModal({
             />
           </div>
 
+          {/* Opciones de pago */}
+          <div className="mb-6">
+            <h3 className="text-sm font-medium mb-3">Método de pago</h3>
+            <RadioGroup
+              value={paymentMethod}
+              onValueChange={(value) =>
+                setPaymentMethod(value as "worldcoin" | "dollars")
+              }
+              className="space-y-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="worldcoin" id="bid-worldcoin" />
+                <Label
+                  htmlFor="bid-worldcoin"
+                  className="flex items-center gap-2"
+                >
+                  <Wallet className="h-4 w-4 text-blue-500" />
+                  Pagar con Worldcoin
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="dollars" id="bid-dollars" />
+                <Label
+                  htmlFor="bid-dollars"
+                  className="flex items-center gap-2"
+                >
+                  <DollarSign className="h-4 w-4 text-green-500" />
+                  Pagar con Dólares
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           <div className="mb-4">
             <label className="flex items-center">
               <input
@@ -270,7 +310,9 @@ export default function BidModal({
                 ? "Enviando puja..."
                 : skipVerification
                 ? "Realizar Puja"
-                : "Verificar y Pujar"}
+                : `Verificar y Pujar con ${
+                    paymentMethod === "worldcoin" ? "Worldcoin" : "Dólares"
+                  }`}
             </button>
           </div>
         </div>

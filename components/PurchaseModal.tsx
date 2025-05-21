@@ -1,9 +1,20 @@
 "use client";
 import { useState, useEffect } from "react";
 import type { Car, Client } from "@/types";
-import { Check, AlertTriangle } from "lucide-react";
+import {
+  Check,
+  AlertTriangle,
+  Truck,
+  FileText,
+  PenToolIcon as Tool,
+  Wallet,
+  DollarSign,
+} from "lucide-react";
 import { getImageFromCache } from "@/utils/imageCache";
 import { getRandomCarImage, getRandomDefaultImage } from "@/utils/carImages";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface PurchaseModalProps {
   car: Car;
@@ -34,10 +45,46 @@ export default function PurchaseModal({
   const [feedbackComplete, setFeedbackComplete] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  // Calcular el precio total y la comisión
-  const totalPrice = car.precioInicial;
-  const commission = totalPrice * 0.01; // 1% de comisión
-  const sellerReceives = totalPrice - commission;
+  // Nuevos estados para las opciones de pago y servicios
+  const [paymentMethod, setPaymentMethod] = useState<"worldcoin" | "dollars">(
+    "worldcoin"
+  );
+  const [services, setServices] = useState({
+    paperwork: false,
+    delivery: false,
+    inspection: false,
+  });
+
+  // Calcular el precio base y la comisión del vendedor
+  const basePrice = car.precioInicial;
+  const baseCommissionRate = 0.01; // 1% de comisión base para el vendedor
+  const baseCommission = basePrice * baseCommissionRate;
+  const sellerReceives = basePrice - baseCommission;
+
+  // Calcular costos adicionales para el comprador
+  const getAdditionalCosts = () => {
+    let additionalCosts = 0;
+
+    // Si seleccionó realizar papeles y no paga con Worldcoin, añadir 0.3%
+    if (services.paperwork && paymentMethod !== "worldcoin") {
+      additionalCosts += basePrice * 0.003;
+    }
+
+    // Añadir costo por entrega a domicilio si está seleccionada
+    if (services.delivery) {
+      additionalCosts += basePrice * 0.004;
+    }
+
+    // Añadir costo por revisión mecánica si está seleccionada
+    if (services.inspection) {
+      additionalCosts += basePrice * 0.005;
+    }
+
+    return additionalCosts;
+  };
+
+  const additionalCosts = getAdditionalCosts();
+  const totalPrice = basePrice + additionalCosts;
 
   // Cargar la imagen del caché si está disponible
   useEffect(() => {
@@ -176,6 +223,14 @@ export default function PurchaseModal({
     }
   };
 
+  // Manejar cambios en los servicios seleccionados
+  const handleServiceChange = (service: keyof typeof services) => {
+    setServices((prev) => ({
+      ...prev,
+      [service]: !prev[service],
+    }));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -207,7 +262,8 @@ export default function PurchaseModal({
                   correcta del vehículo.
                 </li>
                 <li>
-                  Cobramos una comisión del 1% por cada transacción exitosa.
+                  Cobramos una comisión base del 1% por cada transacción
+                  exitosa.
                 </li>
                 <li>
                   El vendedor recibirá el pago solo después de su confirmación.
@@ -217,6 +273,172 @@ export default function PurchaseModal({
                   su dinero.
                 </li>
               </ul>
+            </div>
+
+            {/* Opciones de pago */}
+            <div className="mb-6">
+              <h3 className="font-medium mb-3">Método de pago</h3>
+              <RadioGroup
+                value={paymentMethod}
+                onValueChange={(value) =>
+                  setPaymentMethod(value as "worldcoin" | "dollars")
+                }
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="worldcoin" id="worldcoin" />
+                  <Label
+                    htmlFor="worldcoin"
+                    className="flex items-center gap-2"
+                  >
+                    <Wallet className="h-4 w-4 text-blue-500" />
+                    Pagar con Worldcoin
+                    {paymentMethod === "worldcoin" && services.paperwork && (
+                      <span className="text-xs text-green-600 dark:text-green-400 ml-2">
+                        (Trámite de papeles gratis)
+                      </span>
+                    )}
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="dollars" id="dollars" />
+                  <Label htmlFor="dollars" className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-green-500" />
+                    Pagar con Dólares
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Servicios adicionales */}
+            <div className="mb-6">
+              <h3 className="font-medium mb-3">Servicios adicionales</h3>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="paperwork"
+                    checked={services.paperwork}
+                    onCheckedChange={() => handleServiceChange("paperwork")}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="paperwork"
+                      className="flex items-center gap-2"
+                    >
+                      <FileText className="h-4 w-4 text-gray-500" />
+                      Trámite de papeles
+                      {paymentMethod === "worldcoin" ? (
+                        <span className="text-xs text-green-600 dark:text-green-400">
+                          (Gratis con Worldcoin)
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-500">
+                          (+0.3% comisión)
+                        </span>
+                      )}
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="delivery"
+                    checked={services.delivery}
+                    onCheckedChange={() => handleServiceChange("delivery")}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="delivery"
+                      className="flex items-center gap-2"
+                    >
+                      <Truck className="h-4 w-4 text-gray-500" />
+                      Entrega a domicilio
+                      <span className="text-xs text-gray-500">
+                        (+0.4% comisión)
+                      </span>
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="inspection"
+                    checked={services.inspection}
+                    onCheckedChange={() => handleServiceChange("inspection")}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="inspection"
+                      className="flex items-center gap-2"
+                    >
+                      <Tool className="h-4 w-4 text-gray-500" />
+                      Revisión por mecánico
+                      <span className="text-xs text-gray-500">
+                        (+0.5% comisión)
+                      </span>
+                    </Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Resumen de costos */}
+            <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-md">
+              <h3 className="font-medium mb-2">Resumen de costos</h3>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span>Precio base del vehículo:</span>
+                  <span className="font-medium">
+                    ${basePrice.toLocaleString()}
+                  </span>
+                </div>
+
+                {/* Servicios adicionales (costos para el comprador) */}
+                {services.paperwork && paymentMethod !== "worldcoin" && (
+                  <div className="flex justify-between">
+                    <span>Trámite de papeles (0.3%):</span>
+                    <span>${(basePrice * 0.003).toLocaleString()}</span>
+                  </div>
+                )}
+
+                {services.delivery && (
+                  <div className="flex justify-between">
+                    <span>Entrega a domicilio (0.4%):</span>
+                    <span>${(basePrice * 0.004).toLocaleString()}</span>
+                  </div>
+                )}
+
+                {services.inspection && (
+                  <div className="flex justify-between">
+                    <span>Revisión mecánica (0.5%):</span>
+                    <span>${(basePrice * 0.005).toLocaleString()}</span>
+                  </div>
+                )}
+
+                {additionalCosts > 0 && (
+                  <div className="border-t border-gray-200 dark:border-gray-600 my-2 pt-2 flex justify-between font-medium">
+                    <span>Subtotal servicios adicionales:</span>
+                    <span>${additionalCosts.toLocaleString()}</span>
+                  </div>
+                )}
+
+                <div className="border-t border-gray-200 dark:border-gray-600 my-2 pt-2 flex justify-between font-bold">
+                  <span>Total a pagar (comprador):</span>
+                  <span>${totalPrice.toLocaleString()}</span>
+                </div>
+
+                {/* Información para el vendedor */}
+                <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-600">
+                  <div className="flex justify-between text-gray-500">
+                    <span>Comisión del vendedor (1%):</span>
+                    <span>-${baseCommission.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between font-medium">
+                    <span>El vendedor recibirá:</span>
+                    <span>${sellerReceives.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="mb-6">
@@ -250,7 +472,11 @@ export default function PurchaseModal({
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
                 disabled={isPurchasing}
               >
-                {isPurchasing ? "Procesando..." : "Comprar Ahora"}
+                {isPurchasing
+                  ? "Procesando..."
+                  : `Comprar con ${
+                      paymentMethod === "worldcoin" ? "Worldcoin" : "Dólares"
+                    }`}
               </button>
             </div>
           </div>
@@ -302,19 +528,58 @@ export default function PurchaseModal({
                   {car.modelo} ({car.año})
                 </p>
                 <p className="mb-2">
-                  <span className="font-medium">Precio total:</span> $
-                  {totalPrice.toLocaleString()}
+                  <span className="font-medium">Precio base:</span> $
+                  {basePrice.toLocaleString()}
                 </p>
                 <p className="mb-2">
-                  <span className="font-medium">
-                    Comisión de la plataforma (1%):
-                  </span>{" "}
-                  ${commission.toLocaleString()}
+                  <span className="font-medium">Método de pago:</span>{" "}
+                  {paymentMethod === "worldcoin" ? "Worldcoin" : "Dólares"}
                 </p>
-                <p className="mb-2">
-                  <span className="font-medium">El vendedor recibirá:</span> $
-                  {sellerReceives.toLocaleString()}
-                </p>
+
+                {/* Servicios contratados */}
+                {(services.paperwork ||
+                  services.delivery ||
+                  services.inspection) && (
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                    <p className="font-medium mb-1">Servicios contratados:</p>
+                    <ul className="list-disc pl-5 text-sm">
+                      {services.paperwork && (
+                        <li>
+                          Trámite de papeles{" "}
+                          {paymentMethod === "worldcoin"
+                            ? "(Gratis)"
+                            : `($${(basePrice * 0.003).toLocaleString()})`}
+                        </li>
+                      )}
+                      {services.delivery && (
+                        <li>
+                          Entrega a domicilio ($
+                          {(basePrice * 0.004).toLocaleString()})
+                        </li>
+                      )}
+                      {services.inspection && (
+                        <li>
+                          Revisión por mecánico ($
+                          {(basePrice * 0.005).toLocaleString()})
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                  <p className="mb-2 font-bold">
+                    <span>Total pagado:</span> ${totalPrice.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <span>Comisión del vendedor (1%):</span> $
+                    {baseCommission.toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    <span>El vendedor recibirá:</span> $
+                    {sellerReceives.toLocaleString()}
+                  </p>
+                </div>
               </div>
             </div>
 
