@@ -63,7 +63,7 @@ export default function BottomNavigation({
             }`}
           >
             <Bot className="h-6 w-6" />
-            <span className="text-xs mt-1">Ruedin</span>
+            <span className="text-xs mt-1">Bidy</span>
           </button>
         )}
 

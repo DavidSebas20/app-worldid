@@ -35,7 +35,7 @@ export default function Dashboard() {
       case "addcar":
         return "Añadir Auto";
       case "chatbot":
-        return "Ruedin - Asistente";
+        return "Bidy - Asistente";
       case "profile":
         return "Mi Perfil";
       default:

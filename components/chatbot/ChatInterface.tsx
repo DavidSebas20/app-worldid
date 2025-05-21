@@ -36,7 +36,7 @@ export default function ChatInterface({ client }: ChatInterfaceProps) {
         {
           role: "assistant",
           content:
-            "¡Hola! Soy Ruedin, tu asistente de subastas de autos. ¿En qué puedo ayudarte hoy? Puedo informarte sobre autos disponibles, tus pujas o el proceso de subasta.",
+            "¡Hola! Soy Bidy, tu asistente de subastas de autos. ¿En qué puedo ayudarte hoy? Puedo informarte sobre autos disponibles, tus pujas o el proceso de subasta.",
         },
       ]);
     }
@@ -134,7 +134,7 @@ export default function ChatInterface({ client }: ChatInterfaceProps) {
         { role: "assistant", content: data.message },
       ]);
     } catch (error) {
-      console.error("Error chatting with Ruedin:", error);
+      console.error("Error chatting with Bidy:", error);
       setMessages((prev) => [
         ...prev,
         {
